@@ -183,6 +183,7 @@ def groovy_binary(name, main_class, srcs=[], deps=[], **kwargs):
   )
 
 def path_to_class(path):
+  print(path)
   return path
   if path.startswith("src/test/groovy/"):
     return path[len("src/test/groovy/") : path.index(".groovy")].replace('/', '.')
@@ -205,7 +206,7 @@ def _groovy_test_impl(ctx):
       all_deps += this_dep.java.transitive_runtime_deps
 
   # Infer a class name from each src file
-  classes = [path_to_class(src.path) for src in ctx.files.srcs]
+  classes = [suite for suite in ctx.attr.suites]
 
   # Write a file that executes JUnit on the inferred classes
   cmd = "external/local_jdk/bin/java %s -cp %s org.junit.runner.JUnitCore %s\n" % (
@@ -229,6 +230,7 @@ _groovy_test = rule(
             mandatory = True,
             allow_files = FileType([".groovy"]),
         ),
+        "suites": attr.string_list(),
         "deps": attr.label_list(allow_files = FileType([".jar"])),
         "data": attr.label_list(allow_files = True),
         "jvm_flags": attr.string_list(),
@@ -248,6 +250,7 @@ _groovy_test = rule(
 
 def groovy_test(
     name,
+    suites,
     deps=[],
     srcs=[],
     data=[],
@@ -266,6 +269,7 @@ def groovy_test(
 
   _groovy_test(
     name = name,
+    suites = suites,
     size = size,
     tags = tags,
     srcs = srcs,
@@ -323,6 +327,7 @@ def groovy_junit_test(
 
 def spock_test(
     name,
+    suites,
     specs,
     deps=[],
     groovy_srcs=[],
@@ -368,6 +373,7 @@ def spock_test(
   # Create a groovy test
   groovy_test(
     name = name,
+    suites = suites,
     deps = test_deps,
     srcs = specs,
     data = data,
